@@ -5,6 +5,7 @@ import (
 	"os"
 	"errors"
 	"log"
+	"encoding/json"
 	//"encoding/base64"
 
 	"gopkg.in/yaml.v3"
@@ -98,7 +99,19 @@ func buildKubeconfig(config1, config2 *api.Config) *api.Config {
 }
 
 func convertToYAML(kc *api.Config) (string, error) {
-	kcyaml, err := yaml.Marshal(kc)
+	// We need to encode it to json first to utilize the structs omitempty
+	jsonData, err := json.Marshal(kc)
+	if err != nil {
+		return "", err
+	}
+
+	// need to unmarshal json to convert to yaml
+	var yamlData map[string]any
+	if err := json.Unmarshal(jsonData, &yamlData); err != nil {
+		return "", err
+	}
+
+	kcyaml, err := yaml.Marshal(yamlData)
 	if err != nil {
 		return "", err
 	}
