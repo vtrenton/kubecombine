@@ -5,6 +5,7 @@ import (
 	"os"
 	"errors"
 	"log"
+	//"encoding/base64"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/tools/clientcmd"
@@ -29,14 +30,12 @@ func main() {
 	// load both kubeconfigs into a api.Config struct
 	config1, err := loadKubeconfig(os.Args[1])
 	if err != nil {
-		fmt.Printf("Error loading kubeconfig: %v\n", err)
-		return
+		log.Fatalf("Error loading kubeconfig: %v\n", err)
 	}
 	
 	config2, err := loadKubeconfig(os.Args[2])
 	if err != nil {
-		fmt.Printf("Error loading kubeconfig: %v\n", err)
-		return
+		log.Fatalf("Error loading kubeconfig: %v\n", err)
 	}
 	
 	outkc := buildKubeconfig(config1, config2)
@@ -77,7 +76,7 @@ func buildKubeconfig(config1, config2 *api.Config) *api.Config {
 	for name, authinfo := range config1.AuthInfos {
 		authinfos[name] = authinfo
 	}
-	for name, authinfo := range config1.AuthInfos {
+	for name, authinfo := range config2.AuthInfos {
 		authinfos[name] = authinfo
 	}
 
@@ -85,7 +84,7 @@ func buildKubeconfig(config1, config2 *api.Config) *api.Config {
 	for name, context := range config1.Contexts {
 		contexts[name] = context	
 	}
-	for name, context := range config1.Contexts {
+	for name, context := range config2.Contexts {
 		contexts[name] = context
 	}
 
