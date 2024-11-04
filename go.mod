@@ -2,7 +2,10 @@ module github.com/vtrenton/kubecombine
 
 go 1.23.2
 
-require k8s.io/client-go v0.31.2
+require (
+	gopkg.in/yaml.v3 v3.0.1
+	k8s.io/client-go v0.31.2
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect

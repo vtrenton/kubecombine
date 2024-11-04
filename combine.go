@@ -6,12 +6,12 @@ import (
 	"errors"
 	"log"
 
+	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 func main() {
-
 	// validate correct amount of Args
 	if len(os.Args) != 3 {
 		log.Fatal("Please provide 2 kubeconfigs!")
@@ -38,19 +38,14 @@ func main() {
 		fmt.Printf("Error loading kubeconfig: %v\n", err)
 		return
 	}
-
-	// Access some information from the Config struct
-	fmt.Printf("Loaded Kubeconfig for Context: %s\n", config1.CurrentContext)
-	for name, cluster := range config1.Clusters {
-		fmt.Printf("Cluster Name: %s, Server: %s\n", name, cluster.Server)
+	
+	outkc := buildKubeconfig(config1, config2)
+	kubeconfig, err := convertToYAML(outkc)
+	if err != nil {
+		log.Fatalf("Unable to convert yaml: %s", err)
 	}
 
-	// Access some information from the Config struct
-	fmt.Printf("Loaded Kubeconfig for Context: %s\n", config2.CurrentContext)
-	for name, cluster := range config2.Clusters {
-		fmt.Printf("Cluster Name: %s, Server: %s\n", name, cluster.Server)
-	}
-
+	fmt.Println(kubeconfig)
 }
 
 // loadKubeconfig reads a Kubeconfig file and returns the API Config struct
@@ -62,3 +57,51 @@ func loadKubeconfig(path string) (*api.Config, error) {
 	return config, nil
 }
 
+func buildKubeconfig(config1, config2 *api.Config) *api.Config {
+	// Create
+	clusters := make(map[string]*api.Cluster)
+	for name, cluster := range config1.Clusters {
+		clusters[name] = &api.Cluster{
+			Server:                   cluster.Server,
+			CertificateAuthorityData: cluster.CertificateAuthorityData,
+		}
+	}
+	for name, cluster := range config2.Clusters {
+		clusters[name] = &api.Cluster{
+			Server:                   cluster.Server,
+			CertificateAuthorityData: cluster.CertificateAuthorityData,
+		}
+	}
+
+	authinfos := make(map[string]*api.AuthInfo)
+	for name, authinfo := range config1.AuthInfos {
+		authinfos[name] = authinfo
+	}
+	for name, authinfo := range config1.AuthInfos {
+		authinfos[name] = authinfo
+	}
+
+	contexts := make(map[string]*api.Context)
+	for name, context := range config1.Contexts {
+		contexts[name] = context	
+	}
+	for name, context := range config1.Contexts {
+		contexts[name] = context
+	}
+
+	kubeconfig := &api.Config {
+		Clusters: clusters,
+		AuthInfos: authinfos,
+		Contexts: contexts,
+		CurrentContext: config1.CurrentContext,
+	}
+	return kubeconfig
+}
+
+func convertToYAML(kc *api.Config) (string, error) {
+	kcyaml, err := yaml.Marshal(kc)
+	if err != nil {
+		return "", err
+	}
+	return string(kcyaml), nil
+}
