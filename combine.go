@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"errors"
+	"log"
 
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -12,20 +13,20 @@ import (
 func main() {
 
 	// validate correct amount of Args
-	if len(os.Args) != 2 {
-		fmt.Errorf("please specify 2 kubconfigs to combine")
+	if len(os.Args) != 3 {
+		log.Fatal("Please provide 2 kubeconfigs!")
 	}
 
 	// test given paths
 	if _, err := os.Stat(os.Args[1]); errors.Is(err, os.ErrNotExist) {
-  		fmt.Errorf("%s does not exist", os.Args[1])
+  		log.Fatalf("%s does not exist", os.Args[1])
 	}
 
 	if _, err := os.Stat(os.Args[2]); errors.Is(err, os.ErrNotExist) {
-  		fmt.Errorf("%s does not exist", os.Args[2])
+  		log.Fatalf("%s does not exist", os.Args[2])
 	}
 
-
+	// load both kubeconfigs into a api.Config struct
 	config1, err := loadKubeconfig(os.Args[1])
 	if err != nil {
 		fmt.Printf("Error loading kubeconfig: %v\n", err)
