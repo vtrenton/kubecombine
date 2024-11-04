@@ -90,9 +90,11 @@ func buildKubeconfig(config1, config2 *api.Config) *api.Config {
 	}
 
 	kubeconfig := &api.Config {
-		Clusters: clusters,
-		AuthInfos: authinfos,
-		Contexts: contexts,
+		APIVersion:     "v1",
+		Kind:           "Config",
+		Clusters:       clusters,
+		AuthInfos:      authinfos,
+		Contexts:       contexts,
 		CurrentContext: config1.CurrentContext,
 	}
 	return kubeconfig
