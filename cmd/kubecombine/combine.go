@@ -6,7 +6,6 @@ import (
 	"errors"
 	"log"
 	"encoding/json"
-	//"encoding/base64"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/tools/clientcmd"
@@ -38,7 +37,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading kubeconfig: %v\n", err)
 	}
-	
+
+	// Build out the new combined kubeconfig
 	outkc := buildKubeconfig(config1, config2)
 	kubeconfig, err := convertToYAML(outkc)
 	if err != nil {
@@ -48,7 +48,6 @@ func main() {
 	fmt.Println(kubeconfig)
 }
 
-// loadKubeconfig reads a Kubeconfig file and returns the API Config struct
 func loadKubeconfig(path string) (*api.Config, error) {
 	config, err := clientcmd.LoadFromFile(path)
 	if err != nil {
@@ -58,19 +57,12 @@ func loadKubeconfig(path string) (*api.Config, error) {
 }
 
 func buildKubeconfig(config1, config2 *api.Config) *api.Config {
-	// Create
 	clusters := make(map[string]*api.Cluster)
 	for name, cluster := range config1.Clusters {
-		clusters[name] = &api.Cluster{
-			Server:                   cluster.Server,
-			CertificateAuthorityData: cluster.CertificateAuthorityData,
-		}
+		clusters[name] = cluster
 	}
 	for name, cluster := range config2.Clusters {
-		clusters[name] = &api.Cluster{
-			Server:                   cluster.Server,
-			CertificateAuthorityData: cluster.CertificateAuthorityData,
-		}
+		clusters[name] = cluster
 	}
 
 	authinfos := make(map[string]*api.AuthInfo)
@@ -112,7 +104,8 @@ func convertToYAML(kc *api.Config) (string, error) {
 	if err := json.Unmarshal(jsonData, &yamlData); err != nil {
 		return "", err
 	}
-
+	
+	// Convert to yaml
 	kcyaml, err := yaml.Marshal(yamlData)
 	if err != nil {
 		return "", err
