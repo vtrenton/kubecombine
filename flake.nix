@@ -1,37 +1,43 @@
 {
-  description = "A nix flake to build the kubeconfig combiner go program";
+  description = "Flake to build the kubecombine Go application with cached dependencies";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  };
 
   outputs = { self, nixpkgs }:
-    let
-      pkgs = import nixpkgs { system = "x86_64-linux"; };
-    in
-    {
-      packages.x86_64-linux.kubecombine = pkgs.stdenv.mkDerivation {
+  let
+    system = "x86_64-linux";
+    pkgs = import nixpkgs { inherit system; };
+  in
+  {
+    packages.${system} = rec {
+      kubecombine = pkgs.buildGoModule rec {
         pname = "kubecombine";
-        version = "1.0.0";
+        version = "0.1.0";
 
-        src = ./.;
+        # Use the current directory as the source
+        src = pkgs.lib.cleanSource ./.;
 
-        buildInputs = [ pkgs.go ];
+        # Specify the sub-package where the main module is located
+        subPackages = [ "cmd/kubecombine" ];
 
-        buildPhase = ''
-          export CGO_ENABLED=0
-          export GOCACHE=$(mktemp -d)
-          go build -ldflags="-s -w" -o kubecombine ./cmd/kubecombine/combine.go
-        '';
+        # Disable tests if not needed
+        doCheck = false;
 
-        installPhase = ''
-          mkdir -p $out/bin
-          cp kubecombine $out/bin/
-        '';
+        # Since we're not using vendored dependencies, set vendorHash to null
+        vendorHash = null;
 
-        meta = with pkgs.lib; {
-          description = "A program to combine kubeconfigs!";
-          license = licenses.mit;
-          maintainers = [ "vtrenton" ];
-        };
+        # Provide the hash for Go modules (initially set to a fake hash)
+        modHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+
+        # Explicitly tell Nix not to use the vendor directory
+        modVendor = false;
+
+        # Optionally specify the Go version
+        # go = pkgs.go_1_20;  # Adjust to your required Go version
       };
     };
+  }
 }
+
