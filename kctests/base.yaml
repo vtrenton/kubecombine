@@ -1,19 +1,19 @@
 apiVersion: v1
 kind: Config
 clusters:
-- cluster:
-    certificate-authority-data: bmV3X2NsdXN0ZXJfZGF0YQ== 
-    server: https://cluster2:6443
-  name: cluster2
+  - cluster:
+      certificate-authority-data: bmV3X2NsdXN0ZXJfZGF0YQ==
+      server: https://cluster2:6443
+    name: cluster2
 contexts:
-- context:
-    cluster: cluster2
-    user: user2
-  name: cluster2
+  - context:
+      cluster: cluster2
+      user: user2
+    name: cluster2
 current-context: cluster2
 preferences: {}
 users:
-- name: user2
-  user:
-    client-certificate-data: bmV3X2NsdXN0ZXJfZGF0YQ==
-    client-key-data: bmV3X2NsdXN0ZXJfZGF0YQ==
+  - name: user2
+    user:
+      client-certificate-data: bmV3X2NsdXN0ZXJfZGF0YQ==
+      client-key-data: bmV3X2NsdXN0ZXJfZGF0YQ==

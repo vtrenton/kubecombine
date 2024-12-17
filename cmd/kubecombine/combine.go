@@ -14,32 +14,32 @@ import (
 
 func main() {
 	// validate correct amount of Args
-	if len(os.Args) != 3 {
-		log.Fatal("Please provide 2 kubeconfigs!")
+	if len(os.Args) < 3 {
+		log.Fatal("Please provide at least 2 kubeconfigs!")
 	}
 
-	// test given paths
-	if _, err := os.Stat(os.Args[1]); errors.Is(err, os.ErrNotExist) {
-		log.Fatalf("%s does not exist", os.Args[1])
+	// Capture the paths for
+	var paths []string
+	for _, c := range os.Args[1:] {
+		// test given paths
+		if _, err := os.Stat(c); errors.Is(err, os.ErrNotExist) {
+			log.Fatalf("%s does not exist", c)
+		}
+		paths = append(paths, c)
 	}
 
-	if _, err := os.Stat(os.Args[2]); errors.Is(err, os.ErrNotExist) {
-		log.Fatalf("%s does not exist", os.Args[2])
-	}
-
-	// load both kubeconfigs into a api.Config struct
-	config1, err := clientcmd.LoadFromFile(os.Args[1])
-	if err != nil {
-		log.Fatalf("Error loading kubeconfig: %v\n", err)
-	}
-
-	config2, err := clientcmd.LoadFromFile(os.Args[2])
-	if err != nil {
-		log.Fatalf("Error loading kubeconfig: %v\n", err)
+	var configs []*api.Config
+	for _, path := range paths {
+		// load both kubeconfigs into a api.Config struct
+		objconfig, err := clientcmd.LoadFromFile(path)
+		if err != nil {
+			log.Fatalf("Error loading kubeconfig: %v\n", err)
+		}
+		configs = append(configs, objconfig)
 	}
 
 	// Build out the new combined kubeconfig
-	outkc := buildKubeconfig(config1, config2)
+	outkc := buildKubeconfig(configs)
 	kubeconfig, err := convertToYAML(outkc)
 	if err != nil {
 		log.Fatalf("Unable to convert yaml: %s", err)
@@ -48,12 +48,12 @@ func main() {
 	fmt.Println(kubeconfig)
 }
 
-func buildKubeconfig(config1, config2 *api.Config) *api.Config {
+func buildKubeconfig(configs []*api.Config) *api.Config {
 	clusters := make(map[string]*api.Cluster)
 	authinfos := make(map[string]*api.AuthInfo)
 	contexts := make(map[string]*api.Context)
 
-	for _, config := range []*api.Config{config1, config2} {
+	for _, config := range configs {
 		for name, cluster := range config.Clusters {
 			clusters[name] = cluster
 		}
@@ -73,7 +73,7 @@ func buildKubeconfig(config1, config2 *api.Config) *api.Config {
 		Clusters:       clusters,
 		AuthInfos:      authinfos,
 		Contexts:       contexts,
-		CurrentContext: config1.CurrentContext,
+		CurrentContext: configs[0].CurrentContext,
 	}
 	return kubeconfig
 }
@@ -82,19 +82,19 @@ func convertToYAML(kc *api.Config) (string, error) {
 	// We need to encode it to json first to utilize the structs omitempty
 	jsonData, err := json.Marshal(kc)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("JSON Marshal Error: %s", err)
 	}
 
 	// need to unmarshal json to convert to yaml
 	var yamlData map[string]any
 	if err := json.Unmarshal(jsonData, &yamlData); err != nil {
-		return "", err
+		return "", fmt.Errorf("JSON Unmarshal Error: %s", err)
 	}
 
 	// Convert to yaml
 	kcyaml, err := yaml.Marshal(yamlData)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("YAML Marshal Error: %s", err)
 	}
 	return string(kcyaml), nil
 }
