@@ -18,7 +18,7 @@ func main() {
 		log.Fatal("Please provide at least 2 kubeconfigs!")
 	}
 
-	// Capture the paths for
+	// Capture the paths for Args
 	var paths []string
 	for _, c := range os.Args[1:] {
 		// test given paths
