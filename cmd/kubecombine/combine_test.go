@@ -1,8 +1,11 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
@@ -58,19 +61,39 @@ var (
 )
 
 func TestBuildKubeconfig(t *testing.T) {
+	// Use your existing global testConfig1 and testConfig2
+	configs := []*api.Config{testConfig1, testConfig2}
 
+	result := buildKubeconfig(configs)
+
+	// Verify combined result has both clusters
+	assert.Len(t, result.Clusters, 2)
+	assert.Contains(t, result.Clusters, "cluster1")
+	assert.Contains(t, result.Clusters, "cluster2")
+
+	// Verify current context comes from first config
+	assert.Equal(t, "cluster1", result.CurrentContext)
 }
 
-func TestConverttoYaml(t *testing.T) {
-	t.Run("Bad JSON conversion of input kc", func(t *testing.T) {
-		kubeconfig := &api.Config{
-			APIVersion:     "v1",
-			Kind:           "Config",
-			Clusters:       "{}",
-			AuthInfos:      "{}",
-			Contexts:       "{}",
-			CurrentContext: "{}",
-		}
-		got := convertToYAML()
-	})
+func TestConvertToYAML(t *testing.T) {
+	result, err := convertToYAML(testConfig1)
+
+	assert.NoError(t, err)
+	assert.Contains(t, result, "cluster1")
+	assert.Contains(t, result, "https://cluster1:6443")
+}
+
+func TestValidatePaths(t *testing.T) {
+	// Create temp files just for path validation
+	tmpDir := t.TempDir()
+	validFile1 := filepath.Join(tmpDir, "valid1.yaml")
+	validFile2 := filepath.Join(tmpDir, "valid2.yaml")
+	os.WriteFile(validFile1, []byte("test"), 0644)
+	os.WriteFile(validFile2, []byte("test"), 0644)
+
+	args := []string{"kubecombine", validFile1, validFile2}
+	paths, err := validatePaths(args)
+
+	assert.NoError(t, err)
+	assert.Equal(t, []string{validFile1, validFile2}, paths)
 }
