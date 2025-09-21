@@ -13,29 +13,17 @@ import (
 )
 
 func main() {
-	// validate correct amount of Args
-	if len(os.Args) < 3 {
-		log.Fatal("Please provide at least 2 kubeconfigs!")
+
+	paths, err := validatePaths(os.Args)
+	if err != nil {
+		//handle error
+		fmt.Fprintf(os.Stderr, "%v", err)
+		os.Exit(1)
 	}
 
-	// Capture the paths for Args
-	var paths []string
-	for _, c := range os.Args[1:] {
-		// test given paths
-		if _, err := os.Stat(c); errors.Is(err, os.ErrNotExist) {
-			log.Fatalf("%s does not exist", c)
-		}
-		paths = append(paths, c)
-	}
-
-	var configs []*api.Config
-	for _, path := range paths {
-		// load both kubeconfigs into a api.Config struct
-		objconfig, err := clientcmd.LoadFromFile(path)
-		if err != nil {
-			log.Fatalf("Error loading kubeconfig: %v\n", err)
-		}
-		configs = append(configs, objconfig)
+	configs, err := loadConfigFromFile(paths)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v", err)
 	}
 
 	// Build out the new combined kubeconfig
@@ -46,6 +34,37 @@ func main() {
 	}
 
 	fmt.Println(kubeconfig)
+}
+
+func loadConfigFromFile(paths []string) ([]*api.Config, error) {
+	var configs []*api.Config
+	for _, path := range paths {
+		// load both kubeconfigs into a api.Config struct
+		objconfig, err := clientcmd.LoadFromFile(path)
+		if err != nil {
+			log.Fatalf("Error loading kubeconfig: %v\n", err)
+		}
+		configs = append(configs, objconfig)
+	}
+	return configs, nil
+}
+
+func validatePaths(args []string) ([]string, error) {
+	// validate correct amount of Args
+	if len(args) < 3 {
+		log.Fatal("Please provide at least 2 kubeconfigs!")
+	}
+
+	// Capture the paths for Args
+	var paths []string
+	for _, c := range args[1:] {
+		// test given paths
+		if _, err := os.Stat(c); errors.Is(err, os.ErrNotExist) {
+			return nil, fmt.Errorf("file %s does not exist", c)
+		}
+		paths = append(paths, c)
+	}
+	return paths, nil
 }
 
 func buildKubeconfig(configs []*api.Config) *api.Config {
