@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
@@ -71,8 +71,17 @@ func TestValidatePaths(t *testing.T) {
 	args := []string{"kubecombine", validFile1, validFile2}
 	paths, err := validatePaths(args)
 
-	assert.NoError(t, err)
-	assert.Equal(t, []string{validFile1, validFile2}, paths)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if len(paths) != 2 {
+		t.Fatalf("expected 2 paths, got %d", len(paths))
+	}
+
+	if paths[0] != validFile1 || paths[1] != validFile2 {
+		t.Fatalf("expected [%s, %s], got %v", validFile1, validFile2, paths)
+	}
 }
 
 func TestLoadConfigFromFile(t *testing.T) {
@@ -129,10 +138,21 @@ users:
 
 	configs, err := loadConfigFromFile([]string{file1, file2})
 
-	assert.NoError(t, err)
-	assert.Len(t, configs, 2)
-	assert.Equal(t, "cluster1", configs[0].CurrentContext)
-	assert.Equal(t, "cluster2", configs[1].CurrentContext)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if len(configs) != 2 {
+		t.Fatalf("expected 2 configs, got %d", len(configs))
+	}
+
+	if configs[0].CurrentContext != "cluster1" {
+		t.Fatalf("expected first config current context to be 'cluster1', got '%s'", configs[0].CurrentContext)
+	}
+
+	if configs[1].CurrentContext != "cluster2" {
+		t.Fatalf("expected second config current context to be 'cluster2', got '%s'", configs[1].CurrentContext)
+	}
 }
 
 func TestBuildKubeconfig(t *testing.T) {
@@ -142,18 +162,36 @@ func TestBuildKubeconfig(t *testing.T) {
 	result := buildKubeconfig(configs)
 
 	// Verify combined result has both clusters
-	assert.Len(t, result.Clusters, 2)
-	assert.Contains(t, result.Clusters, "cluster1")
-	assert.Contains(t, result.Clusters, "cluster2")
+	if len(result.Clusters) != 2 {
+		t.Fatalf("expected 2 clusters, got %d", len(result.Clusters))
+	}
+
+	if _, exists := result.Clusters["cluster1"]; !exists {
+		t.Fatal("expected cluster1 to exist in combined config")
+	}
+
+	if _, exists := result.Clusters["cluster2"]; !exists {
+		t.Fatal("expected cluster2 to exist in combined config")
+	}
 
 	// Verify current context comes from first config
-	assert.Equal(t, "cluster1", result.CurrentContext)
+	if result.CurrentContext != "cluster1" {
+		t.Fatalf("expected current context to be 'cluster1', got '%s'", result.CurrentContext)
+	}
 }
 
 func TestConvertToYAML(t *testing.T) {
 	result, err := convertToYAML(testConfig1)
 
-	assert.NoError(t, err)
-	assert.Contains(t, result, "cluster1")
-	assert.Contains(t, result, "https://cluster1:6443")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if !strings.Contains(result, "cluster1") {
+		t.Fatal("expected YAML output to contain 'cluster1'")
+	}
+
+	if !strings.Contains(result, "https://cluster1:6443") {
+		t.Fatal("expected YAML output to contain 'https://cluster1:6443'")
+	}
 }
