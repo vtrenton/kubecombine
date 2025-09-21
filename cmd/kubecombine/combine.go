@@ -13,22 +13,30 @@ import (
 )
 
 func main() {
+	// This pattern is hot garbage
+	// go needs to fix This
+	var err error
 
-	paths, err := validatePaths(os.Args)
+	var paths []string
+	paths, err = validatePaths(os.Args)
 	if err != nil {
 		//handle error
 		fmt.Fprintf(os.Stderr, "%v", err)
 		os.Exit(1)
 	}
 
-	configs, err := loadConfigFromFile(paths)
+	var configs []*api.Config
+	configs, err = loadConfigFromFile(paths)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v", err)
 	}
 
 	// Build out the new combined kubeconfig
 	outkc := buildKubeconfig(configs)
-	kubeconfig, err := convertToYAML(outkc)
+
+	// convert kubeconfig Object to printable yaml
+	var kubeconfig string
+	kubeconfig, err = convertToYAML(outkc)
 	if err != nil {
 		log.Fatalf("Unable to convert yaml: %s", err)
 	}
