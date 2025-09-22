@@ -17,17 +17,16 @@ The binary will then exist at:
 `result/bin/kubecombine`
 
 OR you can build a docker image and load it with docker
-Protip: the nix image is going to be smaller than the regular docker one :)
 ```
 nix build .#docker
 docker load < result
 ```
 ### Docker
 Building can be accomplished with:
-`docker build`
+`docker build . -t kubecombine`
 
 
-## Useage
+## Usage
 
 ### Docker
 
