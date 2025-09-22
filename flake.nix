@@ -22,6 +22,8 @@
 
           subPackages = [ "cmd/kubecombine" ];
 
+          ldflags = [ "-s" "-w" ];
+
           meta = with pkgs.lib; {
             description = "Combine multiple kubeconfigs into one single kubeconfig";
             homepage = "https://github.com/vtrenton/kubecombine";
@@ -37,7 +39,12 @@
           tag = "latest";
           copyToRoot = pkgs.buildEnv {
             name = "image-root";
-            paths = [ self.packages.${system}.default ];
+            paths = [
+              (pkgs.runCommand "kubecombine-only" {} ''
+                mkdir -p $out/bin
+                cp ${self.packages.${system}.default}/bin/kubecombine $out/bin/
+              '')
+            ];
             pathsToLink = [ "/bin" ];
           };
           config = {

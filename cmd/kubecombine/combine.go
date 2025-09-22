@@ -17,14 +17,16 @@ func main() {
 	// go needs to fix This
 	var err error
 
+	// validate the user input
 	var paths []string
 	paths, err = validatePaths(os.Args)
 	if err != nil {
 		//handle error
-		fmt.Fprintf(os.Stderr, "%v", err)
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 
+	// load the configs into an in memory Object
 	var configs []*api.Config
 	configs, err = loadConfigFromFile(paths)
 	if err != nil {
@@ -41,26 +43,14 @@ func main() {
 		log.Fatalf("Unable to convert yaml: %s", err)
 	}
 
+	// Print the combined config to the user
 	fmt.Println(kubeconfig)
-}
-
-func loadConfigFromFile(paths []string) ([]*api.Config, error) {
-	var configs []*api.Config
-	for _, path := range paths {
-		// load both kubeconfigs into a api.Config struct
-		objconfig, err := clientcmd.LoadFromFile(path)
-		if err != nil {
-			log.Fatalf("Error loading kubeconfig: %v\n", err)
-		}
-		configs = append(configs, objconfig)
-	}
-	return configs, nil
 }
 
 func validatePaths(args []string) ([]string, error) {
 	// validate correct amount of Args
 	if len(args) < 3 {
-		log.Fatal("Please provide at least 2 kubeconfigs!")
+		return nil, errors.New("please provide at least two kubeconfigs")
 	}
 
 	// Capture the paths for Args
@@ -73,6 +63,19 @@ func validatePaths(args []string) ([]string, error) {
 		paths = append(paths, c)
 	}
 	return paths, nil
+}
+
+func loadConfigFromFile(paths []string) ([]*api.Config, error) {
+	var configs []*api.Config
+	for _, path := range paths {
+		// load both kubeconfigs into a api.Config struct
+		objconfig, err := clientcmd.LoadFromFile(path)
+		if err != nil {
+			return nil, fmt.Errorf("error loading kubeconfig: %v\n", err)
+		}
+		configs = append(configs, objconfig)
+	}
+	return configs, nil
 }
 
 func buildKubeconfig(configs []*api.Config) *api.Config {
