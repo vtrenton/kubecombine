@@ -10,7 +10,7 @@ There are three main ways to build this:
 ### Go:
 `go build -o kubecombine cmd/kubecombine/combine.go`
 
-### Nix
+### Nix:
 build a binary directly with:
 `nix build`
 The binary will then exist at:
@@ -21,13 +21,14 @@ OR you can build a docker image and load it with docker
 nix build .#docker
 docker load < result
 ```
-### Docker
+### Docker:
 Building can be accomplished with:
 `docker build . -t kubecombine`
 
 
 ## Usage
+Pass in two or more kubeconfigs in as stdin and the program will combine and output the yaml to stdout.
 
 ### Docker
 
-`  docker run -v /path/to/configs:/configs kubecombine:latest /configs/config1.yaml /configs/config2.yaml`
+`docker run -v /path/to/configs:/configs kubecombine:latest /configs/config1.yaml /configs/config2.yaml`
