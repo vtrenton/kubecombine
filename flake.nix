@@ -32,6 +32,20 @@
 
         packages.kubecombine = self.packages.${system}.default;
 
+        packages.docker = pkgs.dockerTools.buildImage {
+          name = "kubecombine";
+          tag = "latest";
+          copyToRoot = pkgs.buildEnv {
+            name = "image-root";
+            paths = [ self.packages.${system}.default ];
+            pathsToLink = [ "/bin" ];
+          };
+          config = {
+            Cmd = [ "/bin/kubecombine" ];
+            WorkingDir = "/";
+          };
+        };
+
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             go
