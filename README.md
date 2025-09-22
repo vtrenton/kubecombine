@@ -7,7 +7,7 @@ There are three main ways to build this:
 2. The nix way (including the nix docker way)
 3. The Docker way
 
-### Go build:
+### Go:
 `go build -o kubecombine cmd/kubecombine/combine.go`
 
 ### Nix
